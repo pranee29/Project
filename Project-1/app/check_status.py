@@ -17,13 +17,11 @@ from PyQt5.QtWidgets import (
     QListView,
     QBoxLayout,
 )
-import http.client as ht
 import numpy as np
 from utils import generate_uuid
 from match_faces1 import match1
 from train_model import train
-
-class Guest(QMainWindow):
+class Status(QMainWindow):
     """
     This class is a subpart of main window.
     The purpose of this class is to register a new case and
@@ -51,13 +49,8 @@ class Guest(QMainWindow):
                 The logged in user
         """
         super().__init__()
-        self.title = "Guest User Window"
-        self.name = None
-        self.age = None
-        self.mob = None
-        self.father_name = None
+        self.title = "Check Status"
         self.image = None
-        self.loc=None
         self.encoded_image = None
         self.key_points = None
         self.user = user
@@ -84,70 +77,8 @@ class Guest(QMainWindow):
         upload_image_button.move(self._x_axis, 20)
         upload_image_button.clicked.connect(self.openFileNameDialog)
 
-        save_button = QPushButton("Save", self)
-        save_button.resize(150, 50)
-        save_button.move(self._x_axis, 350)
-        save_button.clicked.connect(self.save)
-
-        self.get_name()
-        self.get_age()
-        self.get_fname()
-        self.get_mob()
-        self.get_loc()
         self.show()
     
-    def get_loc(self):
-        """
-        This method reads the input Location from text field in GUI.
-        """
-        self.loc_label = QLabel(self)
-        self.loc_label.setText("Guest Address:")
-        self.loc_label.move(self._x_axis-50,150 )
-        self.loc = QLineEdit(self)
-        self.loc.move(self._x_axis,150 )
-
-    def get_name(self):
-        """
-        This method reads the input name from text field in GUI.
-        """
-        self.name_label = QLabel(self)
-        self.name_label.setText("Child Name:")
-        self.name_label.move(self._x_axis-50, 100)
-        self.name = QLineEdit(self)
-        self.name.move(self._x_axis, 100)
-
-    def get_age(self):
-        """
-        This method reads the age from text field in GUI.
-        """
-        self.age_label = QLabel(self)
-        self.age_label.setText("Estimated Age:")
-        self.age_label.move(self._x_axis-50, 200)
-
-        self.age = QLineEdit(self)
-        self.age.move(self._x_axis, 200)
-
-    def get_fname(self):
-        """
-        This method reads Father's name from text field in GUI.
-        """
-        self.fname_label = QLabel(self)
-        self.fname_label.setText("Child Father's\n Name:")
-        self.fname_label.move(self._x_axis-50, 250)
-
-        self.father_name = QLineEdit(self)
-        self.father_name.move(self._x_axis, 250)
-
-    def get_mob(self):
-        """
-        This method reads mob number from text field in GUI.
-        """
-        self.mob_label = QLabel(self)
-        self.mob_label.setText("Guest Mobile number:")
-        self.mob_label.move(self._x_axis-50, 300)
-
-        self.mob = QLineEdit(self)
-        self.mob.move(self._x_axis, 300)
 
     def get_facial_points(self, image_url) -> list:
         """
@@ -193,104 +124,9 @@ class Guest(QMainWindow):
         if self.fileName:
             self.key_points = self.get_facial_points(self.fileName)
             
+            
 
-    def get_entries(self):
-        """
-        A check to make sure empty fields are not saved.
-        A case will be uniquely identified by these fields.
-        """
-        entries = {}
-        if(self.father_name != ""):
-            entries["father_name"]="Not Known"
-        if (
-            self.age.text() != ""
-            and self.mob.text() != ""
-            and self.name != ""
-            and self.loc != ""
-        ):
-            entries["age"] = self.age.text()
-            entries["name"] = self.name.text()
-            entries["loc"] = self.loc.text()
-            entries["mobile"] = self.mob.text()
-            return entries
-        else:
-            return None
-    def send_sms(self,num1,num2,address_found):
-        # importing the module
-
-
-# establishing connection
-        conn = ht.HTTPSConnection("api.msg91.com")
-
-# determining the payload
-        payload = '''{"sender": "MSGAPI",
-			          "route": "4",
-			          "country": "91",
-			          "sms": [
-				            {
-				                "message": "Your Child Found at ",
-				                "to": [
-                                    "9652692992"
-				                ]
-				            },
-			                ]
-			        }'''
-
-# creating the header
-        headers = {
-	        'authkey': "384615AfIQVTTu9fxz636676b3P1",
-	        'content-type': "application/json"
-        }
-
-# sending the connection request
-        conn.request("POST", "/api/v2/sendsms", payload, headers)
-        res = conn.getresponse()
-        data = res.read()
-
-# printing the acknowledgement
-        print(data.decode("utf-8"))
-
-    def save_to_db(self, entries):
-        URL = "http://localhost:8000/guest_case"
-        headers = {"Content-Type": "application/json", "Accept": "application/json"}
-
-        byte_content = open(self.fileName, "rb").read()
-        base64_bytes = base64.b64encode(byte_content)
-        base64_string = base64_bytes.decode("utf-8")
-        entries["image"] = base64_string
-        
-        try:
-            res = requests.post(URL, json.dumps(entries), headers=headers)
-            if res.status_code == 200:
-                QMessageBox.about(self, "Success", "Saved successfully")
-            else:
-                QMessageBox.about(self, "Error", "Something went wrong while saving")
-        except Exception as e:
-            QMessageBox.about(self, "Error", "Couldn't connect to database")
-
-    def save(self):
-        """
-        Save method is triggered with save button on GUI.
-        All the parameters are passed to a db methods whose task is to save
-        them in db.
-        If the save operation is successful then you'll get True as output and
-        a dialog message will be displayed other False will be returned and
-        you'll get appropriate message.
-        """
-        entries = self.get_entries()
-        if entries:
-            entries["face_encoding"] = self.key_points
-            entries["submitted_by"] = self.user
-            entries["case_id"] = generate_uuid()
-            self.save_to_db(entries)
-            output1 = train(self.user)
-            output = match1()
-            if output["status"]:
-                result = output["result"]
-                self.view_cases(result)
-                
-        else:
-            QMessageBox.about(self, "Error", "Please fill all entries")
+    
 
     def view_cases(self, result):
         list_ = QListView(self)
@@ -301,28 +137,21 @@ class Guest(QMainWindow):
         item = QStandardItem("Matched")
         model.appendRow(item)
         count=0
-        phone_number1=self.mob.text()
-        phone_number2=0
         for case_id, submission_list in result.items():
             # Change status of Matched Case
+            count=count+1
+            
             requests.get(
                 f"http://localhost:8000/change_found_status?case_id='{case_id}'"
             )
-            
             case_details = self.get_details(case_id, "case")
             for submission_id in submission_list:
-                count=count+1
                 submission_details = self.get_details(
                     submission_id, "public_submission"
                 )
                 image = self.decode_base64(submission_details[0][3])
-                phone_number2=submission_details[0][4]
-                address_found=submission_details[0][2]
-                print(count)
-                if count==1 and phone_number1!=phone_number2:
-                    print("Messaging")
-                    phone_number2=str(phone_number2)
-                    self.send_sms(phone_number1,phone_number2,address_found)
+
+                
                 item = QStandardItem(
                     
                     " Name: "
@@ -333,8 +162,8 @@ class Guest(QMainWindow):
                     + str(submission_details[0][4])
                     + "\n Address: "
                     + str(submission_details[0][2])
-                    +
-                    "\n Matched Date: " + submission_details[0][6]
+                    
+                    # "\n Matched Date" + submission_details[0][1]
                 )
                 image = QtGui.QImage(
                     image,
@@ -369,5 +198,5 @@ class Guest(QMainWindow):
 if __name__ == "__main__":
 
     app = QApplication(sys.argv)
-    w = Guest("user")
+    w = NewCase("admin")
     sys.exit(app.exec())

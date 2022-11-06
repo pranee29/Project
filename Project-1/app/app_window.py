@@ -17,7 +17,7 @@ from PyQt5.QtGui import QPixmap
 
 from new_case import NewCase
 from guest_case import Guest
-
+from check_status import Status
 class AppWindow(QMainWindow):
     def __init__(self, user):
         super().__init__()
@@ -48,12 +48,18 @@ class AppWindow(QMainWindow):
 
 
         button_upload1 = QPushButton("About", self)
-        button_upload1.move(400, 410)
+        button_upload1.move(400, 490)
         button_upload1.resize(150, 50)
         button_upload1.clicked.connect(self.about)
+
+        button_upload3 = QPushButton("Check Status", self)
+        button_upload3.move(400, 410)
+        button_upload3.resize(150, 50)
+        button_upload3.clicked.connect(self.status)
         # loading image
-        
+
         self.pixmap = QPixmap('OIP.jpeg')
+ 
         # adding image to label
         self.label.setPixmap(self.pixmap)
         self.label.move(75,240)
@@ -76,10 +82,13 @@ class AppWindow(QMainWindow):
 
     def guest_case(self):
         self.guest_case = Guest(self.user)
-    
+
     def about(self):
         QMessageBox.about(self,"About","The public can click the photographs of suspicious child and upload them into a portal with details. If you don't know the details fill it with any letters but address must be filled correctly. This photo will be compared automatically with the photos of the registered missing child cases present in the repository \n The input child image is classified with photo having best match and the details are displayed")
     
+    def status(self):
+        self.check_status=Status(self.user)
+
     def decode_base64(self, img: str):
         """
         Image is converted ot numpy array.

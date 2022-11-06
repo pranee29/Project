@@ -264,9 +264,11 @@ class NewCase(QMainWindow):
         model = QStandardItemModel(list_)
         item = QStandardItem("Matched")
         model.appendRow(item)
-        
+        count=0
         for case_id, submission_list in result.items():
             # Change status of Matched Case
+            count=count+1
+            
             requests.get(
                 f"http://localhost:8000/change_found_status?case_id='{case_id}'"
             )
